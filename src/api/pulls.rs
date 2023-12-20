@@ -300,6 +300,35 @@ impl<'octo> PullRequestHandler<'octo> {
         self.crab.post(route, Some(&map)).await
     }
 
+    /// Submit a review for a pull request.
+    /// ```no_run
+    /// # async fn run() -> octocrab::Result<()> {
+    /// let review = octocrab::instance().pulls("owner", "repo")
+    ///   .create_review(101, "body", octocrab::params::pulls::ReviewEvent::Approve)
+    /// .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn create_review(
+        &self,
+        pr: u64,
+        body: impl Into<String>,
+        event: impl Into<crate::models::pulls::ReviewEvent>,
+    ) -> crate::Result<crate::models::pulls::Review> {
+        let route = format!(
+            "/repos/{owner}/{repo}/pulls/{pr}/reviews",
+            owner = self.owner,
+            repo = self.repo,
+            pr = pr,
+        );
+
+        let mut map = serde_json::Map::new();
+        map.insert("body".to_string(), body.into().into());
+        map.insert("event".to_string(), event.into().into());
+
+        self.crab.post(route, Some(&map)).await
+    }
+
     /// Remove a requested reviewer from users or teams.
     /// ```no_run
     /// # async fn run() -> octocrab::Result<()> {
