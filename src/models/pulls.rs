@@ -229,6 +229,25 @@ pub enum ReviewState {
     Dismissed,
 }
 
+#[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all(serialize = "UPPERCASE"))]
+#[non_exhaustive]
+pub enum ReviewEvent {
+    Approve,
+    RequestChanges,
+    Comment,
+}
+
+impl Into<serde_json::Value> for ReviewEvent {
+    fn into(self) -> serde_json::Value {
+        match self {
+            ReviewEvent::Approve => "APPROVE".into(),
+            ReviewEvent::RequestChanges => "REQUEST_CHANGES".into(),
+            ReviewEvent::Comment => "COMMENT".into(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Comment {

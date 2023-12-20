@@ -2,15 +2,18 @@
 
 mod comment;
 mod create;
-mod update;
 mod list;
 mod merge;
+mod update;
 
 use snafu::ResultExt;
 
 use crate::{Octocrab, Page};
 
-pub use self::{create::CreatePullRequestBuilder, update::UpdatePullRequestBuilder, list::ListPullRequestsBuilder};
+pub use self::{
+    create::CreatePullRequestBuilder, list::ListPullRequestsBuilder,
+    update::UpdatePullRequestBuilder,
+};
 
 /// A client to GitHub's pull request API.
 ///
@@ -211,10 +214,7 @@ impl<'octo> PullRequestHandler<'octo> {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn update(
-        &self,
-        pull_number: u64,
-    ) -> update::UpdatePullRequestBuilder<'octo, '_> {
+    pub fn update(&self, pull_number: u64) -> update::UpdatePullRequestBuilder<'octo, '_> {
         update::UpdatePullRequestBuilder::new(self, pull_number)
     }
 
@@ -289,6 +289,35 @@ impl<'octo> PullRequestHandler<'octo> {
         map.insert("team_reviewers".to_string(), team_reviewers.into().into());
 
         self.crab.post(url, Some(&map)).await
+    }
+
+    /// Submit a review for a pull request.
+    /// ```no_run
+    /// # async fn run() -> octocrab::Result<()> {
+    /// let review = octocrab::instance().pulls("owner", "repo")
+    ///   .create_review(101, "body", octocrab::models::pulls::ReviewEvent::Approve)
+    /// .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn create_review(
+        &self,
+        pr: u64,
+        body: impl Into<String>,
+        event: impl Into<crate::models::pulls::ReviewEvent>,
+    ) -> crate::Result<crate::models::pulls::Review> {
+        let route = format!(
+            "/repos/{owner}/{repo}/pulls/{pr}/reviews",
+            owner = self.owner,
+            repo = self.repo,
+            pr = pr,
+        );
+
+        let mut map = serde_json::Map::new();
+        map.insert("body".to_string(), body.into().into());
+        map.insert("event".to_string(), event.into().into());
+
+        self.crab.post(route, Some(&map)).await
     }
 
     /// List all `FileDiff`s associated with the pull request.
